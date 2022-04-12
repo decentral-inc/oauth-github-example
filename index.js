@@ -5,14 +5,20 @@ const LRU = require('lru-cache')
 const axios = require('axios');
 const express = require('express');
 const path = require('path');
+// Asynchronous
+const { randomBytes } = require('crypto');
+
 
 const app = express();
 
 app.use(express.static('static'));
 
 app.get('/', (req, res) => {
+
   res.sendFile(path.join(__dirname, '/static/index.html'));
 });
+
+
 
 app.use('/book',validateToken, express.static("./static/md/book/html"));
 
@@ -21,6 +27,7 @@ app.get('/auth', (req, res) => {
     `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}`,
   );
 });
+
 
 app.get('/oauth_redirect',function (req,res) {
   console.log("req: ",req);
@@ -45,21 +52,44 @@ app.get('/oauth_callback', (req, res) => {
       'accept': 'application/json' 
     } 
   };
+
+
   axios
     .post('https://github.com/login/oauth/access_token', body, opts)
     .then((_res) => { 
       return _res.data.access_token
     })
     .then((oauth2_token) => {
-      cache.set("oauth2_token", oauth2_token)
+      let wallet = {
+        id: randomBytes(32),
+        oauth2_token
+      };
+      cache.set("wallet", wallet)
       res.redirect(`/?token=${oauth2_token}`);
     })
     .catch((err) => res.status(500).json({ err: err.message }));
 });
 
 function validateToken(req,res,next) {
-  cache.get("key") // "value"
-  
+  let oauth2_token = cache.get("wallet"); // "value"
+  var config = {
+    method: 'get',
+    url: 'https://api.github.com/',
+    headers: { 
+      'token': oauth2_token,
+      'Content-Type': 'application/json', 
+      'accept': 'application/json'
+    }
+  };
+  axios(config)
+    .then(function (response) {
+      console.log(JSON.stringify(response.data));
+      next()
+    })
+    .catch(function (error) {
+      console.log(error);
+      res.status(500).send('Something broke!')
+    });
   // do in axios $ curl -H "Authorization: token OAUTH-TOKEN" https://api.github.com
 
   
