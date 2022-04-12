@@ -64,17 +64,18 @@ app.get('/oauth_callback', (req, res) => {
         id: randomBytes(32),
         oauth2_token
       };
-      cache.set("wallet", wallet)
+      cache.set(wallet, {isAuthenticated:false});
+      cache.set('oauth2_token', oauth2_token)
       res.redirect(`/?token=${oauth2_token}`);
     })
     .catch((err) => res.status(500).json({ err: err.message }));
 });
 
 function validateToken(req,res,next) {
-  let oauth2_token = cache.get("wallet"); // "value"
+  let oauth2_token = cache.get("oauth2_token"); // "value"
   var config = {
     method: 'get',
-    url: 'https://api.github.com/',
+    url: 'https://api.github.com/user',
     headers: { 
       'token': oauth2_token,
       'Content-Type': 'application/json', 
@@ -84,6 +85,9 @@ function validateToken(req,res,next) {
   axios(config)
     .then(function (response) {
       console.log(JSON.stringify(response.data));
+      if (typeof response.status === 200) {
+        let {id,login} = response.data;
+      }
       next()
     })
     .catch(function (error) {
