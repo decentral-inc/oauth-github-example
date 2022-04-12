@@ -61,8 +61,7 @@ app.get('/oauth_callback', (req, res) => {
     })
     .then((oauth2_token) => {
       let wallet = {
-        id: randomBytes(32),
-        oauth2_token
+        id: randomBytes(32)
       };
       cache.set(wallet, {isAuthenticated:false});
       cache.set('oauth2_token', oauth2_token)
@@ -73,11 +72,12 @@ app.get('/oauth_callback', (req, res) => {
 
 function validateToken(req,res,next) {
   let oauth2_token = cache.get("oauth2_token"); // "value"
-  var config = {
+  console.log("oauth2_token: ",oauth2_token);
+  let config = {
     method: 'get',
     url: 'https://api.github.com/user',
     headers: { 
-      'token': oauth2_token,
+      'Authorization': 'Bearer ' + oauth2_token,
       'Content-Type': 'application/json', 
       'accept': 'application/json'
     }
@@ -87,6 +87,7 @@ function validateToken(req,res,next) {
       console.log(JSON.stringify(response.data));
       if (typeof response.status === 200) {
         let {id,login} = response.data;
+
       }
       next()
     })
