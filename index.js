@@ -13,6 +13,8 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '/static/index.html'));
 });
 
+app.use('/book',validateToken, express.static("./static/md/book/html"));
+
 app.get('/auth', (req, res) => {
   res.redirect(
     `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}`,
@@ -53,6 +55,26 @@ app.get('/oauth_callback', (req, res) => {
     })
     .catch((err) => res.status(500).json({ err: err.message }));
 });
+
+function validateToken() {
+  
+  // do in axios $ curl -H "Authorization: token OAUTH-TOKEN" https://api.github.com
+
+  
+}
+
+
+function authenticateRequest(req, res, next) {
+  /**
+   * 1. Makes a protected call to remote resource
+   * 2. Remote resource authenticates request then sends a zipped book over
+   * 3. Oauth2 server has a proxy mechanism to pipe over large files in a queue like setting
+   * 4. After certain amount of time the queue is completed then a route is dynamically modified
+   * 5. There is a toggle switch and now the /book route serves the unzipped static contents
+   * 
+   */  
+}
+
 
 
 
