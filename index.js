@@ -1,6 +1,7 @@
 "use strict";
 
 require('dotenv').config();
+const LRU = require('lru-cache')
 const axios = require('axios');
 const express = require('express');
 const path = require('path');
@@ -49,14 +50,15 @@ app.get('/oauth_callback', (req, res) => {
     .then((_res) => { 
       return _res.data.access_token
     })
-    .then((token) => {
-      console.log('My token:', token);
-      res.redirect(`/?token=${token}`);
+    .then((oauth2_token) => {
+      cache.set("oauth2_token", oauth2_token)
+      res.redirect(`/?token=${oauth2_token}`);
     })
     .catch((err) => res.status(500).json({ err: err.message }));
 });
 
-function validateToken() {
+function validateToken(req,res,next) {
+  cache.get("key") // "value"
   
   // do in axios $ curl -H "Authorization: token OAUTH-TOKEN" https://api.github.com
 
@@ -74,6 +76,31 @@ function authenticateRequest(req, res, next) {
    * 
    */  
 }
+
+
+
+// At least one of 'max', 'ttl', or 'maxSize' is required, to prevent
+// unsafe unbounded storage.
+// In most cases, it's best to specify a max for performance, so all
+// the required memory allocation is done up-front.
+const options = {
+  max: 500, 
+  maxSize: 5000,
+  sizeCalculation: (value, key) => {
+    return 1
+  },
+  // function to call when the item is removed from the cache
+  dispose: (value, key) => {
+    console.log("cache entry cleaned")
+  },
+  ttl: 1000 * 60 * 5,
+  allowStale: false,
+  updateAgeOnGet: false,
+  updateAgeOnHas: false,
+};
+const cache = new LRU(options);
+
+
 
 
 
